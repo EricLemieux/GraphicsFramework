@@ -2,6 +2,8 @@
 //Created for use with homework for intermediete graphics
 //Eric Lemieux, 2014
 
+//Based on the code created in tutorial with Dan Buckstein.
+
 ////Includes
 //Standard C++
 #include <iostream>
@@ -9,6 +11,8 @@
 //Graphics
 #include <GL\glew.h>
 #include <GLFW\glfw3.h>
+
+#undef _UNICODE
 #include <IL\il.h>
 #include <IL\ilu.h>
 #include <IL\ilut.h>
@@ -16,6 +20,10 @@
 //Project
 #include "VertexBuffer.h"
 #include "GLSL.h"
+#include "BasicShapes.h"
+
+void initOpenGL(GLFWwindow *window);
+int loadTexture(const char* filePath);
 
 //Start
 int main(void)
@@ -48,30 +56,28 @@ int main(void)
 	if(err != GLEW_OK)
 		std::cout<<"glewInit() Error\n";
 
+	//Init OpenGL
+	initOpenGL(myWindow);
+
 	//Init DevIL
 	ilInit();
 	iluInit();
 	ilutInit();
 	ilutRenderer(ILUT_OPENGL);
-
+		
 	//Create a test shader
 	GLSLProgram *testProgram = new GLSLProgram;
 	int result = 1;
 	GLSLShader testShader_V, testShader_F;
-	result *= testShader_V.CreateShaderFromFile(GLSL_VERTEX_SHADER, "Shaders/passthu_v.glsl");
-	result *= testShader_F.CreateShaderFromFile(GLSL_FRAGMENT_SHADER, "Shaders/passthu_f.glsl");
+	result *= testShader_V.CreateShaderFromFile(GLSL_VERTEX_SHADER,		"Shaders/passthu_v.glsl");
+	result *= testShader_F.CreateShaderFromFile(GLSL_FRAGMENT_SHADER,	"Shaders/passthu_f.glsl");
 	result *= testProgram->AttachShader(&testShader_V);
 	result *= testProgram->AttachShader(&testShader_F);
 	result *= testProgram->LinkProgram();
 	result *= testProgram->ValidateProgram();
 
-	//Add verticies to an array to be used by VBO
-	float verts[] = {0,0,0,1,-1,0,-1,-1,0};
-
-	//Create example VBO to be used by the program
-	VertexBuffer *VBO = new VertexBuffer;
-	VBO->Initialize(3, false, false);
-	VBO->AddVerticies(verts);
+	//Create basic cube
+	VertexBuffer *VBO = Shapes_Cube();
 
 	//main program loop
 	while(!glfwWindowShouldClose(myWindow))
@@ -81,7 +87,7 @@ int main(void)
 
 		//Poll events
 		glfwPollEvents();
-
+		
 		//Activate the program
 		testProgram->Activate();
 
@@ -100,4 +106,55 @@ int main(void)
 
 	//exit the program
 	return 0;
+}
+
+void initOpenGL(GLFWwindow *window)
+{
+	glClearDepth(1.f);
+	glClearColor(0.3f, 0.3f,0.9f,1.0f);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+
+	gluPerspective(90.0f, (double)width/(double)height, 0.0f, 1000.0f);
+	
+	glMatrixMode(GL_MODELVIEW);
+}
+
+int loadTexture(const char* filePath)
+{
+	//load image
+	ILuint texName;
+	ilGenImages(1, &texName);
+	ilBindImage(texName);
+
+	ilLoadImage(filePath);
+	ILubyte *bytes	= ilGetData();	
+	if(!bytes)
+	{
+		std::cout<<"error opening image file";
+
+		//Clean up memory
+		ilBindImage(0);
+		ilDeleteImages(1, &texName);
+		return false;
+	}
+	else
+	{
+		GLuint texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+	
+		gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, ilGetInteger(IL_IMAGE_WIDTH), ilGetInteger(IL_IMAGE_HEIGHT), ilGetInteger(IL_IMAGE_FORMAT), ilGetInteger(IL_IMAGE_TYPE), ilGetData());
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+		//Image is now OpenGL's problem
+		ilBindImage(0);
+		ilDeleteImages(1, &texName);
+		return true;
+	}
 }

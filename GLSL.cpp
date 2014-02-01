@@ -109,7 +109,6 @@ int GLSLShader::CreateShaderFromFile(shaderType newType, const char *filePath)
 	}
 	source[i-1] = '\0';
 
-	std::cout<<source;
 	int ret = CreateShaderFromString(newType, source);
 	if(&source)
 	{
