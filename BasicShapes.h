@@ -1,5 +1,9 @@
 //Creates basic shapes for testing on.
 
+#pragma once
+
+#include "VertexBuffer.h"
+
 inline VertexBuffer* Shapes_Cube(void)
 {
 	VertexBuffer *cube = new VertexBuffer;
