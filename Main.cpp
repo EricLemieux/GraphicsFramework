@@ -40,79 +40,43 @@ glm::mat4 modelViewMat;
 glm::mat4 viewProjectionMat;
 glm::mat4 modelViewProjectionMat;
 
-glm::mat4 eyeToWorld;
-glm::mat4 worldToObject;
+//Global window variables
+int windowWidth, windowHeight;
+
+//Global camera variables
+static const float camFOV		= 90.0f;
+static const float camNearPlane = 0.1f;
+static const float camFarPlane	= 100.0f;
 
 //Uniform variables
 int vertMV, vertMVP;
 
 Object camera;
 
-glm::mat4 lookAt(Object *obj, glm::vec3 position, glm::vec3 target, glm::vec3 worldUp)
-{
-	glm::mat4 newMat;
-
-	obj->position = position;
-	newMat[3] = glm::vec4(position,1);
-
-	newMat[2] = glm::vec4(glm::normalize(position - target),0);
-
-	newMat[0] = glm::vec4(glm::normalize(glm::cross( worldUp, glm::vec3(newMat[2].x,newMat[2].y,newMat[2].z))),0);
-
-	newMat[1] = glm::vec4(glm::normalize(glm::cross( glm::vec3(newMat[2].x,newMat[2].y,newMat[2].z), glm::vec3(newMat[0].x,newMat[0].y,newMat[0].z))),0);
-
-	return newMat;
-}
-
-glm::mat4 transformInverseUniformScale(glm::mat4 mat)
-{
-	glm::mat4 result;
-
-	result = glm::mat4(glm::transpose(glm::mat3(mat)) * (1/glm::dot(glm::vec3(mat[0]), glm::vec3(mat[0]))));
-
-	result[3] = -result[3];
-
-	return result;
-}
-
-glm::mat4 transformInverseNoScale(glm::mat4 mat)
-{
-	glm::mat4 result;
-
-	glm::mat3 temp = glm::mat3(eyeToWorld[0].x, eyeToWorld[0].y, eyeToWorld[0].z,
-								eyeToWorld[1].x, eyeToWorld[1].y, eyeToWorld[1].z,
-								eyeToWorld[2].x, eyeToWorld[2].y, eyeToWorld[2].z);
-	temp = glm::transpose(temp);
-
-	glm::vec3 m = glm::vec3(mat[3].x, mat[3].y, mat[3].z);
-	glm::vec4 r = glm::vec4(-(temp * m),1);
-
-	result = glm::mat4(glm::vec4(temp[0],0), glm::vec4(temp[1],0), glm::vec4(temp[2],0), r);
-
-	//result[3] = -result[3];
-
-	return result;
-}
-
 void updateObjectMatricies(Object *obj)
 {
-	modelMat = glm::yawPitchRoll(obj->rotation.x, obj->rotation.y, obj->rotation.z);
-	//modelMat *= obj->scale;
-	glm::scale(modelMat,obj->scale);
-	modelMat = glm::mat4(modelMat[0], modelMat[1], modelMat[2], glm::vec4(obj->position,1));
+	glm::mat4 modelMatTranslation = glm::translate(glm::mat4(1), obj->position);
+	glm::mat4 modelMatRotation = glm::yawPitchRoll(obj->rotation.x, obj->rotation.y, obj->rotation.z);
+	modelMat = glm::mat4(modelMatRotation[0], modelMatRotation[1], modelMatRotation[2], modelMatTranslation[3]);
 
-	modelViewMat = viewMat * modelMat;
+	modelViewMat = modelMat * viewMat;
 
 	modelViewProjectionMat = modelViewMat * projectionMat;
-
-	worldToObject = transformInverseUniformScale(modelMat);
 }
 
 void updateCameraMatricies(void)
 {
-	viewMat = transformInverseNoScale(eyeToWorld);
+	//TODO:
+	//Update to use quaternions to provent gimbal lock, but should be fine for the most part.
+	glm::mat4 viewMatTranslate = glm::translate(glm::mat4(1), camera.position);
+	glm::mat4 viewMatRotation = glm::yawPitchRoll(camera.rotation.x, camera.rotation.y, camera.rotation.z);
+	viewMat = glm::mat4(viewMatRotation[0], viewMatRotation[1], viewMatRotation[2], viewMatTranslate[3]);
+}
 
-	viewProjectionMat = projectionMat * viewMat;
+void Reshape(int width, int height)
+{
+	projectionMat = glm::perspective(camFOV, (float)width/(float)height, camNearPlane, camFarPlane);
+	int a = 0;
 }
 
 
@@ -175,6 +139,9 @@ int main(void)
 	VertexBuffer *cubeVBO = Shapes_Cube();
 	Object cubeObj;
 
+	cubeObj.position = glm::vec3(0,0,0);
+	camera.position = glm::vec3(0,0,5);
+
 	//main program loop
 	while(!glfwWindowShouldClose(myWindow))
 	{
@@ -182,26 +149,28 @@ int main(void)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//Update the camera
-		eyeToWorld = lookAt(&camera, camera.position, camera.position + glm::vec3(0,0,1), glm::vec3(0,1,0));
+		projectionMat = glm::lookAt(camera.position, glm::vec3(0,0,0), glm::vec3(0,1,0));
 		updateCameraMatricies();
-
-		//Update positions in world space
-		glm::vec4 eyePosWorld = glm::vec4(camera.position, 1.0f);
-
-		//positions in object space
-		glm::vec4 eyePosObj;
-
+		
 		//Poll events
 		glfwPollEvents();
-		
+
 		//Activate the program
 		testProgram->Activate();
 
 		//Update and pass uniform variables.
+		if(cubeObj.rotation.x <= 360)
+		{
+			cubeObj.rotation.x += 0.01f;
+			cubeObj.rotation.y += 0.01f;
+		}
+		else
+		{
+			cubeObj.rotation.x = cubeObj.rotation.y = 0;
+		}
 		updateObjectMatricies(&cubeObj);
 		glUniformMatrix4fv(vertMVP, 1, 0, glm::value_ptr(modelViewProjectionMat));
 		
-
 		//Render to buffer
 		cubeVBO->ActivateAndRender();
 
@@ -222,17 +191,12 @@ int main(void)
 
 void initOpenGL(GLFWwindow *window)
 {
-	glClearDepth(1.f);
+	//glClearDepth(1.f);
+	glEnable(GL_DEPTH_TEST);
 	glClearColor(0.3f, 0.3f,0.9f,1.0f);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
 
-	int width, height;
-	glfwGetWindowSize(window, &width, &height);
-
-	gluPerspective(90.0f, (double)width/(double)height, 0.0f, 1000.0f);
-	
-	glMatrixMode(GL_MODELVIEW);
+	glfwGetWindowSize(window, &windowWidth, &windowHeight);
+	Reshape(windowWidth, windowHeight);
 }
 
 int loadTexture(const char* filePath)
