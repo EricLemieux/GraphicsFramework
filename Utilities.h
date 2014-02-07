@@ -14,16 +14,10 @@ public:
 	glm::vec3 position;
 	glm::vec3 rotation;
 	glm::vec3 scale;
+
+	glm::vec3 colour;
 };
 
-struct Light
+struct Light:Object
 {
-	Light()
-	{
-		position	= glm::vec3(0);
-		colour		= glm::vec3(0);
-	}
-public:
-	glm::vec3 position;
-	glm::vec3 colour;
 };
