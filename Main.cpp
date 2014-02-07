@@ -36,8 +36,6 @@ glm::mat4 modelMat;
 glm::mat4 viewMat;
 glm::mat4 projectionMat;
 
-glm::mat4 modelViewMat;
-glm::mat4 viewProjectionMat;
 glm::mat4 modelViewProjectionMat;
 
 //Global window variables
@@ -49,7 +47,7 @@ static const float camNearPlane = 0.1f;
 static const float camFarPlane	= 100.0f;
 
 //Uniform variables
-int vertMV, vertMVP;
+int MVP;
 
 Object camera;
 
@@ -58,25 +56,13 @@ void updateObjectMatricies(Object *obj)
 	glm::mat4 modelMatTranslation = glm::translate(glm::mat4(1), obj->position);
 	glm::mat4 modelMatRotation = glm::yawPitchRoll(obj->rotation.x, obj->rotation.y, obj->rotation.z);
 	modelMat = glm::mat4(modelMatRotation[0], modelMatRotation[1], modelMatRotation[2], modelMatTranslation[3]);
-
-	modelViewMat = modelMat * viewMat;
-
-	modelViewProjectionMat = modelViewMat * projectionMat;
-}
-
-void updateCameraMatricies(void)
-{
-	//TODO:
-	//Update to use quaternions to provent gimbal lock, but should be fine for the most part.
-	glm::mat4 viewMatTranslate = glm::translate(glm::mat4(1), camera.position);
-	glm::mat4 viewMatRotation = glm::yawPitchRoll(camera.rotation.x, camera.rotation.y, camera.rotation.z);
-	viewMat = glm::mat4(viewMatRotation[0], viewMatRotation[1], viewMatRotation[2], viewMatTranslate[3]);
+	
+	modelViewProjectionMat	= projectionMat * viewMat * modelMat;
 }
 
 void Reshape(int width, int height)
 {
 	projectionMat = glm::perspective(camFOV, (float)width/(float)height, camNearPlane, camFarPlane);
-	int a = 0;
 }
 
 
@@ -132,8 +118,7 @@ int main(void)
 	result *= testProgram->ValidateProgram();
 
 	//get uniform variables
-	vertMV		= testProgram->GetUniformLocation("mv");
-	vertMVP		= testProgram->GetUniformLocation("mvp");
+	MVP		= testProgram->GetUniformLocation("mvp");
 
 	//Create basic cube
 	VertexBuffer *cubeVBO = Shapes_Cube();
@@ -147,11 +132,7 @@ int main(void)
 	{
 		//Clear buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		//Update the camera
-		projectionMat = glm::lookAt(camera.position, glm::vec3(0,0,0), glm::vec3(0,1,0));
-		updateCameraMatricies();
-		
+				
 		//Poll events
 		glfwPollEvents();
 
@@ -168,8 +149,13 @@ int main(void)
 		{
 			cubeObj.rotation.x = cubeObj.rotation.y = 0;
 		}
+
+		//Update the camera
+		viewMat			= glm::lookAt(camera.position, glm::vec3(0,0,0), glm::vec3(0,1,0));
+				
 		updateObjectMatricies(&cubeObj);
-		glUniformMatrix4fv(vertMVP, 1, 0, glm::value_ptr(modelViewProjectionMat));
+
+		glUniformMatrix4fv(MVP, 1, 0, glm::value_ptr(modelViewProjectionMat));
 		
 		//Render to buffer
 		cubeVBO->ActivateAndRender();
