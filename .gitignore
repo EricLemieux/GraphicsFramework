@@ -15,3 +15,4 @@
 #Visual Studio Files
 *.vcxproj
 *.vcxproj.filters
+Debug/
