@@ -28,6 +28,9 @@
 #include <glm\ext.hpp>
 #include <glm\gtx\euler_angles.hpp>
 
+//Sound
+#include "SoundManager.h"
+
 void initOpenGL(GLFWwindow *window);
 int loadTexture(const char* filePath);
 
