@@ -22,6 +22,7 @@
 #include "GLSL.h"
 #include "BasicShapes.h"
 #include "Utilities.h"
+#include "FrameBuffer.h"
 
 //Math
 #include <glm\glm.hpp>
