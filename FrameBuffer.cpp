@@ -1,11 +1,13 @@
 #include "FrameBuffer.h"
 
+#include <string>
 
 FrameBuffer::FrameBuffer(void)
 {
 	handle			= 0;
 
-	//colourTex[16];
+	memset(colourTex, 0, sizeof(colourTex));
+	
 	numTargets		= 0;
 
 	depthTex		= 0;
@@ -35,18 +37,22 @@ void FrameBuffer::Release(void)
 		//Delete the textures
 		glBindTexture(GL_TEXTURE_2D, 0);
 		if(*colourTex)
+		{
 			glDeleteTextures(1, colourTex);
+		}
 
 		//Reset the values
 		handle			= 0;
-		//colourTex[16];
+		memset(colourTex, 0, sizeof(colourTex));
 		numTargets		= 0;
 		depthTex		= 0;
 		width = height	= 0;
 	}
 }
 
-int FrameBuffer::Initialize(unsigned int w, unsigned int h, unsigned int colour, bool useDepth, bool useHDR, bool useLinearFilter, bool clamp)
+int FrameBuffer::Initialize(unsigned int w, unsigned int h,
+							unsigned int colour, bool useDepth, bool useHDR,
+							bool useLinearFilter, bool clamp)
 {
 	if(w && h && (colour || useDepth))
 	{
@@ -73,7 +79,7 @@ int FrameBuffer::Initialize(unsigned int w, unsigned int h, unsigned int colour,
 			{
 				int maxTargets;
 				glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxTargets);
-				numTargets = (int)colour < maxTargets ? colour : maxTargets;
+				numTargets = (int)colour <= maxTargets ? colour : maxTargets;
 
 				glGenTextures(1, colourTex);
 
@@ -83,8 +89,8 @@ int FrameBuffer::Initialize(unsigned int w, unsigned int h, unsigned int colour,
 					glBindTexture(GL_TEXTURE_2D, *colourTex);
 					glTexImage2D(GL_TEXTURE_2D, 0, colourFormat, width, height, 0, GL_RGBA, colourBit, 0);
 
-					glTexParameteri(GL_TEXTURE, GL_TEXTURE_MIN_FILTER, filtering);
-					glTexParameteri(GL_TEXTURE, GL_TEXTURE_MAG_FILTER, filtering);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filtering);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filtering);
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapping);
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapping);
 
@@ -123,7 +129,7 @@ int FrameBuffer::Initialize(unsigned int w, unsigned int h, unsigned int colour,
 	return 0;
 }
 
-void FrameBuffer::Activate()
+void FrameBuffer::Activate() const
 {
 	//If the FBO has been created and has a handle
 	if(handle)
@@ -188,7 +194,7 @@ void FrameBuffer::UnbindTextures(void)
 //SETTERS
 //////////
 
-void FrameBuffer::BindColour(unsigned int target)
+void FrameBuffer::BindColour(unsigned int target) const
 {
 	if(target < 16)
 	{
@@ -197,9 +203,15 @@ void FrameBuffer::BindColour(unsigned int target)
 			glBindTexture(GL_TEXTURE_2D, *(colourTex + target));
 		}
 	}
+
+	//if(colourTex)
+	//{
+	//	//glBindtexture(GL_TEXTURE_2D, depthTex);
+	//	glBindTexture(GL_TEXTURE_2D, *(colourTex));
+	//}
 }
 
-void FrameBuffer::BindDepth()
+void FrameBuffer::BindDepth() const
 {
 	if(depthTex)
 	{

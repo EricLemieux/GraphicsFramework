@@ -50,6 +50,8 @@ static const float camFarPlane	= 100.0f;
 //Uniform variables
 int MVP;
 
+int FBOSceneDiffuse;
+
 Object camera;
 
 void updateObjectMatricies(Object *obj)
@@ -106,6 +108,10 @@ int main(void)
 	iluInit();
 	ilutInit();
 	ilutRenderer(ILUT_OPENGL);
+
+	//Frame Buffer Object
+	FrameBuffer *scene = new FrameBuffer;
+	scene->Initialize(windowWidth, windowHeight, 2, 1, 0);
 		
 	//Create a test shader
 	GLSLProgram *testProgram = new GLSLProgram;
@@ -117,29 +123,58 @@ int main(void)
 	result *= testProgram->AttachShader(&testShader_F);
 	result *= testProgram->LinkProgram();
 	result *= testProgram->ValidateProgram();
+	
+	//Create the colour shader
+	GLSLProgram *colourProgram = new GLSLProgram;
+	result = 1;
+	GLSLShader colourShader_V, colourShader_F;
+	result *= colourShader_V.CreateShaderFromFile(GLSL_VERTEX_SHADER,	"Shaders/Colour_v.glsl");
+	result *= colourShader_F.CreateShaderFromFile(GLSL_FRAGMENT_SHADER, "Shaders/Colour_f.glsl");
+	result *= colourProgram->AttachShader(&colourShader_V);
+	result *= colourProgram->AttachShader(&colourShader_F);
+	result *= colourProgram->LinkProgram();
+	result *= colourProgram->ValidateProgram();
 
 	//get uniform variables
 	MVP		= testProgram->GetUniformLocation("mvp");
+
+	FBOSceneDiffuse = colourProgram->GetUniformLocation("sceneDiffuse");
+
+	colourProgram->Activate();
+		glUniform1i(FBOSceneDiffuse, 0);
+	colourProgram->Deactivate();
 
 	//Create basic cube
 	VertexBuffer *cubeVBO = Shapes_Cube();
 	Object cubeObj;
 
-	cubeObj.position = glm::vec3(0,0,0);
+	//Create circle
+	VertexBuffer *ballVBO = Shapes_Load("Ball.obj");
+	Object ballObj;
+
+	//Full Screen Quad
+	VertexBuffer *fsq = Shapes_FSQ();
+
+	ballObj.position = glm::vec3(0,0,0);
+	cubeObj.position = glm::vec3(2,0,0);
 	camera.position = glm::vec3(0,0,5);
 
 	//main program loop
 	while(!glfwWindowShouldClose(myWindow))
 	{
+		//Activte the scene FBO
+		scene->Activate();
+
 		//Clear buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				
+		
 		//Poll events
 		glfwPollEvents();
 
 		//Activate the program
 		testProgram->Activate();
-
+		scene->SetTexture(1);
+		
 		//Update and pass uniform variables.
 		if(cubeObj.rotation.x <= 360)
 		{
@@ -150,19 +185,64 @@ int main(void)
 		{
 			cubeObj.rotation.x = cubeObj.rotation.y = 0;
 		}
-
+		
 		//Update the camera
 		viewMat			= glm::lookAt(camera.position, glm::vec3(0,0,0), glm::vec3(0,1,0));
 				
 		updateObjectMatricies(&cubeObj);
-
+		
 		glUniformMatrix4fv(MVP, 1, 0, glm::value_ptr(modelViewProjectionMat));
 		
-		//Render to buffer
+		//Render to FBO
+		scene->SetTexture(0);
 		cubeVBO->ActivateAndRender();
 
+		updateObjectMatricies(&ballObj);
+		glUniformMatrix4fv(MVP, 1, 0, glm::value_ptr(modelViewProjectionMat));
+		scene->SetTexture(0);
+		ballVBO->ActivateAndRender();
+		
 		//Deactivate the program
-		testProgram->Deactivate();
+		//testProgram->Deactivate();
+		scene->Deactivate();
+
+		//Draw scene FBO
+		glDisable(GL_DEPTH_TEST);
+
+		//activate the colour program
+		colourProgram->Activate();
+
+		//This is returning 0, which according to the docs means an error
+		//"Additionally, if an error occurs, zero is returned."
+		//https://www.opengl.org/wiki/GLAPI/glCheckFramebufferStatus
+		GLenum status	= glCheckFramebufferStatus(scene->GetHandle());
+
+		scene->SetTexture(0);
+		scene->BindColour(0);
+		scene->SetTexture(1);
+		scene->BindColour(1);
+		scene->SetTexture(2);
+		scene->BindDepth();
+
+		
+		GLenum ok		= GL_FRAMEBUFFER_COMPLETE;
+
+		ilSaveImage("image.jpg");
+		
+		fsq->ActivateAndRender();
+
+
+		// disable textures
+		scene->SetTexture(2);
+		scene->UnbindTextures();
+		scene->SetTexture(1);
+		scene->UnbindTextures();
+		scene->SetTexture(0);
+		scene->UnbindTextures();
+		
+		GLSLProgram::Deactivate();
+		FrameBuffer::Deactivate();
+		VertexBuffer::Deactivate();
 
 		//Swap buffers
 		glfwSwapBuffers(myWindow);

@@ -10,10 +10,12 @@ public:
 
 	void Release(void);
 
-	int Initialize(unsigned int w, unsigned int h, unsigned int colour, bool useDepth, bool useHDR, bool useLinearFilter, bool clamp);
+	int Initialize(unsigned int w, unsigned int h,
+					unsigned int colour, bool useDepth=true, 
+					bool useHDR=true, bool useLinearFilter=true, bool clamp=true);
 
-	void Activate(void);
-	void Deactivate(void);
+	void Activate(void) const;
+	static void Deactivate(void);
 
 	void UnbindTextures(void);
 
@@ -21,11 +23,11 @@ public:
 	//SETTERS
 	//////////
 
-	void BindColour(unsigned int target);
+	void BindColour(unsigned int target = 0) const;
 
-	void BindDepth(void);
+	void BindDepth(void) const;
 
-	void SetTexture(unsigned int texture);
+	void SetTexture(unsigned int texture = 0);
 
 	//////////
 	//GETTERS

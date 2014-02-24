@@ -36,13 +36,6 @@ int GLSLShader::CreateShaderFromString(shaderType newType, const char *source)
 		//Make sure there is something in the string to load
 		if(source)
 		{
-			//changes our internal shader type to the type for use by openGL
-			const GLenum internalType[6] = 
-			{
-				GL_VERTEX_SHADER,
-				GL_FRAGMENT_SHADER,
-			};
-
 			//create the shader in graphics memory
 			type = newType;
 			handle = glCreateShader(internalType[type]);
@@ -69,7 +62,8 @@ int GLSLShader::CreateShaderFromString(shaderType newType, const char *source)
 				glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &logLength);
 				if(logLength > 0)
 				{
-					char log[sizeof(logLength) + 1];
+					//char log[sizeof(logLength) + 1];
+					char* log = new char;
 					glGetShaderInfoLog(handle, logLength, &logLength, log);
 					std::cout<<"\nShader failed to complile:\n"<<log<<std::endl;
 				}
@@ -94,11 +88,11 @@ int GLSLShader::CreateShaderFromFile(shaderType newType, const char *filePath)
 
 	//find size of the file
 	file.seekg(0, std::ios::end);
-	const static int size = file.tellg();
+	int size = file.tellg();
 	file.seekg(0);
 
-	char* source;
-	source = (char *) malloc (size);
+	char * source;
+	source = ((char *) malloc (size*sizeof(char*) + 1));
 	unsigned int i = 0;
 
 	while(!file.eof())
@@ -112,7 +106,9 @@ int GLSLShader::CreateShaderFromFile(shaderType newType, const char *filePath)
 	int ret = CreateShaderFromString(newType, source);
 	if(&source)
 	{
-		delete source;
+		free(source);
+		//delete[] source;
+		//source = NULL;
 	}
 	return ret;
 }
@@ -188,6 +184,7 @@ int GLSLProgram::LinkProgram(void)
 			glGetProgramInfoLog(handle, logLength, &logLength, log);
 			std::cout<<"\nError in shader compile:\n"<<log<<std::endl;
 			delete log;
+			log = NULL;
 		}
 
 		Release();

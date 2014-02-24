@@ -8,6 +8,34 @@
 #include "VertexBuffer.h"
 
 //Basic Cube
+inline VertexBuffer* Shapes_FSQ(void)
+{
+	VertexBuffer *fsq = new VertexBuffer;
+	
+	float verts[]	= { -1.0f, -1.0f, -1.0f, 
+						 1.0f, -1.0f, -1.0f, 
+						-1.0f,  1.0f, -1.0f, 
+						-1.0f,  1.0f, -1.0f, 
+						 1.0f, -1.0f, -1.0f, 
+						 1.0f,  1.0f, -1.0f, 
+	};
+
+	float texCoords[]= {0.0f, 0.0f, 
+						1.0f, 0.0f, 
+						0.0f, 1.0f, 
+						0.0f, 1.0f, 
+						1.0f, 0.0f, 
+						1.0f, 1.0f, 
+	};
+
+	fsq->Initialize(6, false, true);
+	fsq->AddVerticies(verts);
+	fsq->AddTexCoords(texCoords);
+
+	return fsq;
+}
+
+//Basic Cube
 inline VertexBuffer* Shapes_Cube(void)
 {
 	VertexBuffer *cube = new VertexBuffer;

@@ -15,6 +15,14 @@ enum shaderType
 	//other shader types
 };
 
+//changes our internal shader type to the type for use by openGL
+const GLenum internalType[6] = 
+{
+	GL_VERTEX_SHADER,
+	GL_FRAGMENT_SHADER,
+};
+
+
 class GLSLShader
 {
 private:
