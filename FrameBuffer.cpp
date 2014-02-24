@@ -203,12 +203,6 @@ void FrameBuffer::BindColour(unsigned int target) const
 			glBindTexture(GL_TEXTURE_2D, *(colourTex + target));
 		}
 	}
-
-	//if(colourTex)
-	//{
-	//	//glBindtexture(GL_TEXTURE_2D, depthTex);
-	//	glBindTexture(GL_TEXTURE_2D, *(colourTex));
-	//}
 }
 
 void FrameBuffer::BindDepth() const

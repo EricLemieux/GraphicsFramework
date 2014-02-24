@@ -155,15 +155,15 @@ int main(void)
 	//Full Screen Quad
 	VertexBuffer *fsq = Shapes_FSQ();
 
-	ballObj.position = glm::vec3(0,0,0);
-	cubeObj.position = glm::vec3(2,0,0);
-	camera.position = glm::vec3(0,0,5);
-
+	ballObj.position	= glm::vec3(0,0,0);
+	cubeObj.position	= glm::vec3(2,0,0);
+	camera.position		= glm::vec3(0,0,5);
+	
 	//main program loop
 	while(!glfwWindowShouldClose(myWindow))
 	{
 		//Activte the scene FBO
-		scene->Activate();
+		//scene->Activate();
 
 		//Clear buffers
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -205,34 +205,24 @@ int main(void)
 		//Deactivate the program
 		//testProgram->Deactivate();
 		scene->Deactivate();
-
-		//Draw scene FBO
+		
+		///Draw scene FBO
 		glDisable(GL_DEPTH_TEST);
-
+		
 		//activate the colour program
 		colourProgram->Activate();
-
-		//This is returning 0, which according to the docs means an error
-		//"Additionally, if an error occurs, zero is returned."
-		//https://www.opengl.org/wiki/GLAPI/glCheckFramebufferStatus
-		GLenum status	= glCheckFramebufferStatus(scene->GetHandle());
-
+		
+		//Set textures for the FBO
 		scene->SetTexture(0);
 		scene->BindColour(0);
 		scene->SetTexture(1);
 		scene->BindColour(1);
 		scene->SetTexture(2);
 		scene->BindDepth();
-
-		
-		GLenum ok		= GL_FRAMEBUFFER_COMPLETE;
-
-		ilSaveImage("image.jpg");
-		
+								
 		fsq->ActivateAndRender();
-
-
-		// disable textures
+		
+		//Disable the FBO textures
 		scene->SetTexture(2);
 		scene->UnbindTextures();
 		scene->SetTexture(1);
@@ -298,6 +288,6 @@ int loadTexture(const char* filePath)
 		//Image is now OpenGL's problem
 		ilBindImage(0);
 		ilDeleteImages(1, &texName);
-		return true;
+		return texture;
 	}
 }

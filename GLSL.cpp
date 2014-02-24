@@ -92,7 +92,7 @@ int GLSLShader::CreateShaderFromFile(shaderType newType, const char *filePath)
 	file.seekg(0);
 
 	char * source;
-	source = ((char *) malloc (size*sizeof(char*) + 1));
+	source = ((char *)malloc(size *sizeof(char*)));
 	unsigned int i = 0;
 
 	while(!file.eof())
@@ -107,7 +107,7 @@ int GLSLShader::CreateShaderFromFile(shaderType newType, const char *filePath)
 	if(&source)
 	{
 		free(source);
-		//delete[] source;
+		//delete source;
 		//source = NULL;
 	}
 	return ret;
