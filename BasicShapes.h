@@ -357,7 +357,7 @@ inline VertexBuffer* Shapes_Load(char* fileName)
 	}
 
 	//Init and add data
-	newShape->Initialize(finalVerts.size()/3, false, false);
+	newShape->Initialize(finalVerts.size()/3, true, true);
 	newShape->AddVerticies(&finalVerts[0]);
 	newShape->AddNormals(&finalNormals[0]);
 	newShape->AddTexCoords(&finalTexCoords[0]);
